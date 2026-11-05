@@ -53,6 +53,12 @@ Python aqui orquestra `gpgv`/`qemu-img` e valida JSON com a biblioteca padrão d
 
 `Set-LabUbuntuDisk.ps1` planeja por padrão. Ele verifica o ZIP/manifesto, a VM desligada e o recibo original antes de aceitar `-Apply` com SHA do script e commit de operação. Confere o VHDX com Hyper-V, amplia somente o novo disco até 20 GiB e muda o slot existente, preservando o arquivo anterior. Não cria rede nem inicia a VM. Depois de receber o ZIP, exige 49 GiB livres: 20 para crescimento do disco, 4 de runtime e 25 para o Windows. O orçamento deixa de incluir a ISO de instalador de 4 GiB porque este método usa uma imagem de disco; o ZIP já ocupa espaço no momento da medição. O seed privado pequeno permanece dentro da reserva de runtime.
 
+## Docker no convidado de laboratório
+
+`guest/prepare-docker.sh` planeja por padrão. Os modos de escrita exigem `--apply`, root, identidade exata do novo convidado Hyper-V/Ubuntu 24.04 e hash da fonte publicada. `--refresh-index` atualiza apenas o índice APT. `--install` exige configuração JSON versionada e conferida por hash, com `schema: 1`, `dockerVersion` e `composeVersion` exatos; ela será preenchida depois da consulta ao convidado. O script recusa Docker existente e menos de 8 GiB livres no Linux.
+
+O ensaio usa os [pacotes mantidos pelo Ubuntu](https://ubuntu.com/server/docs/how-to/containers/docker-for-system-admins/) `docker.io` e `docker-compose-v2`, sem adicionar um repositório externo. Bash é usado para chamar APT/systemd/Docker diretamente neste bootstrap, evitando outro runtime de instalação. O smoke test executa `hello-world` oficial, com manifesto linux/amd64 por digest, sem rede dentro do container, e conserva identidade, saída e exit code. Isso comprova execução básica; não é homologação de aplicações, reinício do host ou restauração.
+
 ## Status
 
 Bootstrap e validações disponíveis. Conferir o histórico e os recibos privados de operação para saber o que foi efetivamente executado; este README não declara instalação no host ou em produção.
