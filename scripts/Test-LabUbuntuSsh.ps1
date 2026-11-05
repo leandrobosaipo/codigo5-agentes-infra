@@ -6,7 +6,8 @@ param(
     [ValidatePattern('^[A-Za-z][A-Za-z0-9-]{0,39}$')][string]$VMName='codigo5-agentes-lab',
     [Parameter(Mandatory)][ValidatePattern('^[1-9][0-9]{0,19}$')][string]$ArtifactId,
     [Parameter(Mandatory)][guid]$DefaultSwitchId,
-    [Parameter(Mandatory)][ValidatePattern('^[a-fA-F0-9]{64}$')][string]$ExpectedSeedReceiptSha256
+    [Parameter(Mandatory)][ValidatePattern('^[a-fA-F0-9]{64}$')][string]$ExpectedSeedReceiptSha256,
+    [Parameter(Mandatory)][ValidateSet('GitForWindows','WindowsOpenSSH')][string]$SshClient
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
@@ -58,20 +59,47 @@ if(!$ips.Count){
           (Test-GuestAddress $_.IPAddress)} | Select-Object -ExpandProperty IPAddress | Sort-Object -Unique)
 }
 if($ips.Count -ne 1){throw 'Guest IP pending or ambiguous. Repeat discovery without scanning.'}
-$ssh=(Get-Command ssh.exe -CommandType Application).Source
-$options=@('-T','-F','NUL','-i',$key,'-o','BatchMode=yes','-o','IdentitiesOnly=yes','-o','ConnectTimeout=8',
+$ssh=Join-Path $env:SystemRoot 'System32\OpenSSH\ssh.exe'
+$nullDevice='NUL'
+if($SshClient -eq 'GitForWindows'){
+    $ssh=Join-Path $env:ProgramFiles 'Git\usr\bin\ssh.exe'
+    $nullDevice='/dev/null'
+    $key=$key.Replace('C:\','/c/').Replace('\','/')
+    $known=$known.Replace('C:\','/c/').Replace('\','/')
+}
+if(!(Test-Path -LiteralPath $ssh -PathType Leaf)){throw 'Selected SSH client unavailable.'}
+$options=@('-n','-T','-F',$nullDevice,'-i',$key,'-o','BatchMode=yes','-o','IdentitiesOnly=yes','-o','ConnectTimeout=8',
+  '-o','KexAlgorithms=curve25519-sha256','-o','ServerAliveInterval=5','-o','ServerAliveCountMax=2',
   '-o','StrictHostKeyChecking=yes','-o','HostKeyAlias=codigo5-lab-guest','-o','HostKeyAlgorithms=ssh-ed25519',
-  '-o','UpdateHostKeys=no','-o','GlobalKnownHostsFile=NUL','-o',('UserKnownHostsFile='+$known))
+  '-o','UpdateHostKeys=no','-o',('GlobalKnownHostsFile='+$nullDevice),'-o',('UserKnownHostsFile='+$known))
 $command='hostname; . /etc/os-release; echo $ID; echo $VERSION_ID; uname -m; cat /var/lib/cloud/data/instance-id; timeout 90 cloud-init status --wait'
-# Capture only the expected, non-secret identification fields; discard SSH diagnostics.
-$ErrorActionPreference='Continue'
-$lines=@(& $ssh @options ('labops@'+$ips[0]) $command 2>$null)
-$code=$LASTEXITCODE
-$ErrorActionPreference='Stop'
-if($code -ne 0){throw "Pinned SSH / cloud-init readback returned $code. Inspect without loosening verification."}
+$si=[Diagnostics.ProcessStartInfo]::new()
+$si.FileName=$ssh
+$si.Arguments=($options+@(('labops@'+$ips[0]),$command)) -join ' '
+$si.UseShellExecute=$false
+$si.RedirectStandardInput=$true
+$si.RedirectStandardOutput=$true
+$si.RedirectStandardError=$true
+$proc=[Diagnostics.Process]::Start($si)
+try {
+    $proc.StandardInput.Close()
+    $out=$proc.StandardOutput.ReadToEndAsync()
+    $err=$proc.StandardError.ReadToEndAsync()
+    if(!$proc.WaitForExit(110000)){
+        $proc.Kill()
+        $proc.WaitForExit()
+        throw 'Selected SSH client did not finish the guest readback in 110 seconds.'
+    }
+    $lines=@($out.Result.Trim() -split '[\r\n]+')
+    $null=$err.Result
+    $code=$proc.ExitCode
+} finally {$proc.Dispose()}
+if($code -notin 0,2){throw "Pinned SSH / cloud-init readback returned $code. Inspect without loosening verification."}
 foreach($value in @('agentes-lab','ubuntu','24.04','x86_64',$seed.instanceId)){
     if($value -cnotin $lines){throw 'Authenticated guest identity differs from the expected Ubuntu instance.'}
 }
 if(!(($lines -join ' ') -match 'status:\s*done')){throw 'Cloud-init completion was not observed.'}
-[ordered]@{vmId=$VMId.ToString();instance=$seed.instanceId;ipv4=$ips[0];discovery=$method;ssh='pinned';
-    distribution='Ubuntu';version='24.04';architecture='x86_64';cloudInit='done'}|ConvertTo-Json
+$cloudState=if($code -eq 2){'degraded done'}else{'done'}
+[ordered]@{vmId=$VMId.ToString();instance=$seed.instanceId;ipv4=$ips[0];discovery=$method;ssh='pinned';sshClient=$SshClient;
+    distribution='Ubuntu';version='24.04';architecture='x86_64';cloudInit=$cloudState;cloudInitExitCode=$code;
+    cloudInitNeedsReview=($code -eq 2)}|ConvertTo-Json

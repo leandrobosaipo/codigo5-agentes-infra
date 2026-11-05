@@ -55,7 +55,9 @@ Python aqui orquestra `gpgv`/`qemu-img` e valida JSON com a biblioteca padrão d
 
 `Start-LabUbuntuGuest.ps1` planeja o primeiro boot. A aplicação exige hashes da fonte e do helper, cadeia do recibo do disco, recursos e VM/switch identificados. Gera novas chaves em diretório Windows privado, cria e verifica a CIDATA com IMAPI nativo, conecta somente uma NIC ao Default Switch interno e inicia apenas essa VM. Nunca publica a seed ou a chave privada. Não reinicia o Windows nem habilita autostart da VM.
 
-`Test-LabUbuntuSsh.ps1` faz somente readback: encontra o IP da NIC dessa VM por integração Hyper-V ou vizinhança/MAC no subnet privado, sem varrer a LAN. Exige a chave do servidor Linux fixada antes do boot e confere instância, hostname, arquitetura, Ubuntu e conclusão do cloud-init. Uma VM em `Running` sem esse login não é considerada Linux operacional.
+`Test-LabUbuntuSsh.ps1` faz somente readback: encontra o IP da NIC dessa VM por integração Hyper-V ou vizinhança/MAC no subnet privado, sem varrer a LAN. Exige a chave do servidor Linux fixada antes do boot e confere instância, hostname, arquitetura, Ubuntu e conclusão do cloud-init. O cliente é escolhido explicitamente por `-SshClient GitForWindows` ou `WindowsOpenSSH`, usando instalação já existente; stdin fica fechado e a espera é limitada. Exit 2 do cloud-init aparece como `degraded done`/`cloudInitNeedsReview=true`, sem ser apresentado como estado limpo. Uma VM em `Running` sem login autenticado não é considerada Linux operacional.
+
+A seed usa `ssh_genkeytypes: [ed25519]`. A lista vazia da primeira revisão funcionou para a chave fornecida, mas violou o schema do cloud-init 26.1. A fonte foi corrigida após validar essa diferença em fixture no convidado. Instâncias existentes preservam identidade e histórico do aviso; essa correção não autoriza reexecutar cloud-init ou regenerar chaves.
 
 ## Docker no convidado de laboratório
 

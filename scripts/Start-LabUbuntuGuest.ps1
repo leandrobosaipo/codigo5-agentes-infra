@@ -108,7 +108,7 @@ $config=@(
     '#cloud-config','hostname: agentes-lab','manage_etc_hosts: true','users:','  - name: labops',
     '    lock_passwd: true','    groups: [sudo]','    sudo: ["ALL=(ALL) NOPASSWD:ALL"]','    shell: /bin/bash',
     '    ssh_authorized_keys:',('      - '+$clientPublic),'disable_root: true','ssh_pwauth: false',
-    'ssh_deletekeys: true','ssh_genkeytypes: []','ssh_keys:','  ed25519_private: |',$indented,
+    'ssh_deletekeys: true','ssh_genkeytypes: [ed25519]','ssh_keys:','  ed25519_private: |',$indented,
     ('  ed25519_public: '+$hostPublic),'ssh_publish_hostkeys: {enabled: false}',
     'package_update: false','package_upgrade: false',''
 ) -join [char]10
