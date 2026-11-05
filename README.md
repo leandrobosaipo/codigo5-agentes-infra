@@ -41,6 +41,8 @@ Aplicações futuras devem ter Dockerfiles/manifests e dependências fixadas por
 
 Os sistemas de atendimento, conectores WhatsApp e ambientes produtivos existentes ficam fora do escopo do bootstrap. Apenas um motor de IA deve ser selecionado por piloto. Integrações reais e envios permanecem desabilitados até validação e autorização próprias.
 
+O modelo [AGENTS.server.md](config/AGENTS.server.md) contém a política global do futuro perfil de automação. Antes de instalá-lo, identifique o `CODEX_HOME` efetivo e possíveis overrides; preserve qualquer arquivo existente. Um controlador conectado por SSH precisa ler essas regras explicitamente. A presença do arquivo não instala Codex, não comprova seu carregamento numa sessão nova e não impõe uma barreira contra administrador/root.
+
 ## Imagem Ubuntu genérica
 
 O workflow manual `Build Ubuntu VHDX`, executado em `main`, verifica o índice assinado da Canonical e converte uma imagem QCOW2 fixa para VHDX dinâmico em runner Ubuntu descartável. Não usa credenciais do laboratório, não inicia a imagem e não acessa nenhum host. O artifact público temporário contém somente a imagem genérica e o manifesto de origem/hashes; expira em um dia. Criar esse artifact não instala Ubuntu na VM.
