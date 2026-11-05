@@ -1,0 +1,15 @@
+{
+  "schema": "codigo5-agentes-lab-v1",
+  "stage": "vm-stopped",
+  "vmName": "codigo5-agentes-lab",
+  "rootPath": "C:\\ProgramData\\Codigo5\\Labs\\codigo5-agentes-lab",
+  "generation": 2,
+  "processorCount": 2,
+  "memoryGiB": 2,
+  "vhdMaximumGiB": 20,
+  "hostMinimumFreeGiB": 25,
+  "additionalReserveGiB": 8,
+  "networkAttached": false,
+  "automaticCheckpoints": false,
+  "secureBootTemplate": "MicrosoftUEFICertificateAuthority"
+}
