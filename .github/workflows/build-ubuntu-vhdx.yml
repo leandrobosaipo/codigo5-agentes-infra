@@ -1,0 +1,58 @@
+name: Build Ubuntu VHDX
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/build-ubuntu-vhdx.yml
+      - scripts/build_ubuntu_vhdx.py
+      - scripts/test_build_ubuntu_vhdx.py
+  pull_request:
+    paths:
+      - .github/workflows/build-ubuntu-vhdx.yml
+      - scripts/build_ubuntu_vhdx.py
+      - scripts/test_build_ubuntu_vhdx.py
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Locate or install the Ubuntu QEMU tools on the runner
+        run: |
+          if ! command -v qemu-img >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends qemu-utils
+          fi
+          qemu-img --version
+      - name: Exercise the conversion with synthetic data
+        run: python3 -B scripts/test_build_ubuntu_vhdx.py
+      - name: Verify Canonical's pinned index and convert the image
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+        run: python3 -B scripts/build_ubuntu_vhdx.py --output "$RUNNER_TEMP/ubuntu-image"
+      - name: Save the generic image and manifest for one day
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+        id: artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ubuntu-noble-vhdx-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/ubuntu-image/ubuntu-noble-amd64.vhdx
+            ${{ runner.temp }}/ubuntu-image/manifest.json
+          retention-days: 1
+          compression-level: 6
+          if-no-files-found: error
+      - name: Record GitHub artifact identity
+        if: steps.artifact.outcome == 'success'
+        env:
+          ARTIFACT_ID: ${{ steps.artifact.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.artifact.outputs.artifact-digest }}
+        run: |
+          printf 'Artifact ID: %s\n\nArchive SHA256: %s\n' "$ARTIFACT_ID" "$ARTIFACT_DIGEST" >> "$GITHUB_STEP_SUMMARY"

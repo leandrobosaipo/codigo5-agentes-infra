@@ -41,6 +41,14 @@ Aplicações futuras devem ter Dockerfiles/manifests e dependências fixadas por
 
 Os sistemas de atendimento, conectores WhatsApp e ambientes produtivos existentes ficam fora do escopo do bootstrap. Apenas um motor de IA deve ser selecionado por piloto. Integrações reais e envios permanecem desabilitados até validação e autorização próprias.
 
+## Imagem Ubuntu genérica
+
+O workflow manual `Build Ubuntu VHDX`, executado em `main`, verifica o índice assinado da Canonical e converte uma imagem QCOW2 fixa para VHDX dinâmico em runner Ubuntu descartável. Não usa credenciais do laboratório, não inicia a imagem e não acessa nenhum host. O artifact público temporário contém somente a imagem genérica e o manifesto de origem/hashes; expira em um dia. Criar esse artifact não instala Ubuntu na VM.
+
+Fonte fixada: [Ubuntu Noble 20261017](https://cloud-images.ubuntu.com/noble/20261017/). A impressão digital da chave Cloud está publicada no [procedimento oficial de verificação da Canonical](https://ubuntu.com/docs/public-images/public-images-how-to/verify-image-checksum/). O manifesto registra SHA do workflow, entrada assinada, hash/tamanho da saída e resultado da comparação dos discos. A etapa recusa backing files e discos acima de 20 GiB virtuais. Em pushes/PRs, roda somente uma conversão sintética pequena, com dados não nulos; o download Ubuntu exige disparo manual.
+
+Python aqui orquestra `gpgv`/`qemu-img` e valida JSON com a biblioteca padrão do runner. Essa exceção à preferência por Rust evita introduzir compilação/dependências adicionais para um processo de preparação, mantendo a conversão no utilitário nativo apropriado.
+
 ## Status
 
-Repositório em preparação. Conferir o histórico e os recibos privados de operação para saber o que foi efetivamente executado; este README não declara instalação no host ou em produção.
+Bootstrap e validações disponíveis. Conferir o histórico e os recibos privados de operação para saber o que foi efetivamente executado; este README não declara instalação no host ou em produção.
