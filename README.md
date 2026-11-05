@@ -49,6 +49,8 @@ Fonte fixada: [Ubuntu Noble 20261017](https://cloud-images.ubuntu.com/noble/2026
 
 Python aqui orquestra `gpgv`/`qemu-img` e valida JSON com a biblioteca padrão do runner. Essa exceção à preferência por Rust evita introduzir compilação/dependências adicionais para um processo de preparação, mantendo a conversão no utilitário nativo apropriado.
 
+`Set-LabUbuntuDisk.ps1` planeja por padrão. Ele verifica o ZIP/manifesto, a VM desligada e o recibo original antes de aceitar `-Apply` com SHA do script e commit de operação. Confere o VHDX com Hyper-V, amplia somente o novo disco até 20 GiB e muda o slot existente, preservando o arquivo anterior. Não cria rede nem inicia a VM. Depois de receber o ZIP, exige 49 GiB livres: 20 para crescimento do disco, 4 de runtime e 25 para o Windows. O orçamento deixa de incluir a ISO de instalador de 4 GiB porque este método usa uma imagem de disco; o ZIP já ocupa espaço no momento da medição. O seed privado pequeno permanece dentro da reserva de runtime.
+
 ## Status
 
 Bootstrap e validações disponíveis. Conferir o histórico e os recibos privados de operação para saber o que foi efetivamente executado; este README não declara instalação no host ou em produção.

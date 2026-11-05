@@ -32,4 +32,5 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           & ./scripts/Test-NewLabVM.ps1
+          & ./scripts/Test-LabUbuntuDisk.ps1
           if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
