@@ -59,7 +59,7 @@ Python aqui orquestra `gpgv`/`qemu-img` e valida JSON com a biblioteca padrão d
 
 ## Docker no convidado de laboratório
 
-`guest/prepare-docker.sh` planeja por padrão. Os modos de escrita exigem `--apply`, root, identidade exata do novo convidado Hyper-V/Ubuntu 24.04 e hash da fonte publicada. `--refresh-index` atualiza apenas o índice APT. `--install` exige configuração JSON versionada e conferida por hash, com `schema: 1`, `dockerVersion` e `composeVersion` exatos; ela será preenchida depois da consulta ao convidado. O script recusa Docker existente e menos de 8 GiB livres no Linux.
+`guest/prepare-docker.sh` planeja por padrão. Os modos de escrita exigem `--apply`, root, identidade exata do novo convidado Hyper-V/Ubuntu 24.04 e hash da fonte publicada. `--refresh-index` atualiza apenas o índice APT. `--install` exige configuração JSON versionada e conferida por hash, com `schema: 1`, `dockerVersion` e `composeVersion` exatos. [docker-lab.json](config/docker-lab.json) fixa os candidatos confirmados nos índices Ubuntu em 05/11/2026; uma versão indisponível exige nova revisão, sem fallback para instalação sem versão. O script recusa Docker existente e menos de 8 GiB livres no Linux.
 
 O ensaio usa os [pacotes mantidos pelo Ubuntu](https://ubuntu.com/server/docs/how-to/containers/docker-for-system-admins/) `docker.io` e `docker-compose-v2`, sem adicionar um repositório externo. Bash é usado para chamar APT/systemd/Docker diretamente neste bootstrap, evitando outro runtime de instalação. O smoke test executa `hello-world` oficial, com manifesto linux/amd64 por digest, sem rede dentro do container, e conserva identidade, saída e exit code. Isso comprova execução básica; não é homologação de aplicações, reinício do host ou restauração.
 
