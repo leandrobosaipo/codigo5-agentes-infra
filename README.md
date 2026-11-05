@@ -53,6 +53,10 @@ Python aqui orquestra `gpgv`/`qemu-img` e valida JSON com a biblioteca padrão d
 
 `Set-LabUbuntuDisk.ps1` planeja por padrão. Ele verifica o ZIP/manifesto, a VM desligada e o recibo original antes de aceitar `-Apply` com SHA do script e commit de operação. Confere o VHDX com Hyper-V, amplia somente o novo disco até 20 GiB e muda o slot existente, preservando o arquivo anterior. Não cria rede nem inicia a VM. Depois de receber o ZIP, exige 49 GiB livres: 20 para crescimento do disco, 4 de runtime e 25 para o Windows. O orçamento deixa de incluir a ISO de instalador de 4 GiB porque este método usa uma imagem de disco; o ZIP já ocupa espaço no momento da medição. O seed privado pequeno permanece dentro da reserva de runtime.
 
+`Start-LabUbuntuGuest.ps1` planeja o primeiro boot. A aplicação exige hashes da fonte e do helper, cadeia do recibo do disco, recursos e VM/switch identificados. Gera novas chaves em diretório Windows privado, cria e verifica a CIDATA com IMAPI nativo, conecta somente uma NIC ao Default Switch interno e inicia apenas essa VM. Nunca publica a seed ou a chave privada. Não reinicia o Windows nem habilita autostart da VM.
+
+`Test-LabUbuntuSsh.ps1` faz somente readback: encontra o IP da NIC dessa VM por integração Hyper-V ou vizinhança/MAC no subnet privado, sem varrer a LAN. Exige a chave do servidor Linux fixada antes do boot e confere instância, hostname, arquitetura, Ubuntu e conclusão do cloud-init. Uma VM em `Running` sem esse login não é considerada Linux operacional.
+
 ## Docker no convidado de laboratório
 
 `guest/prepare-docker.sh` planeja por padrão. Os modos de escrita exigem `--apply`, root, identidade exata do novo convidado Hyper-V/Ubuntu 24.04 e hash da fonte publicada. `--refresh-index` atualiza apenas o índice APT. `--install` exige configuração JSON versionada e conferida por hash, com `schema: 1`, `dockerVersion` e `composeVersion` exatos; ela será preenchida depois da consulta ao convidado. O script recusa Docker existente e menos de 8 GiB livres no Linux.
